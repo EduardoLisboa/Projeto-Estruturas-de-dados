@@ -157,11 +157,8 @@ void print_tree(Node *tree)
 {
 	if(tree)
 	{
+		printf("%c ",tree->value);
 		print_tree(tree->left);
-		if(tree->value == '*')
-			printf("%u ", tree->priority);
-		else
-			printf("%c ",tree->value);
 		print_tree(tree->right);
 	}
 }
