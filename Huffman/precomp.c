@@ -63,6 +63,7 @@ int main(unsigned argc, unsigned char const *argv[])
 		Node *n2 = dequeue(pq);
 
 		enqueue(pq, create_node('*', n1->priority+n2->priority, NULL, n1, n2));
+		print_queue(pq);
 	}
 	printf("T:\n");
 	print_tree(pq->head);
@@ -93,7 +94,7 @@ Queue* create_priority_queue()
 
 void enqueue(Queue *pq, Node *node)
 {
-	if(!pq->head || pq->head->priority > node->priority)
+	if(!pq->head || pq->head->priority >= node->priority)
 	{
 		node->next = pq->head;
 		pq->head = node;
@@ -101,7 +102,7 @@ void enqueue(Queue *pq, Node *node)
 	else
 	{
 		Node *n = pq->head;
-		while(n->next && n->next->priority <= node->priority)
+		while(n->next && n->next->priority < node->priority)
 			n = n->next;
 
 		node->next = n->next;
