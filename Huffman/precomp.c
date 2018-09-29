@@ -2,9 +2,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define MAX 256
+
 typedef struct node
 {
-	char value;
+	unsigned char value;
 	unsigned priority;
 	struct node *next;
 	struct node *left;
@@ -16,14 +18,55 @@ typedef struct priority_queue
 	Node *head;
 } Queue;
 
+typedef struct element
+{
+	unsigned key;
+	unsigned char byte[8];
+	unsigned size;
+} Element;
 
-Node* create_node(char value, unsigned p, Node *next, Node *left, Node* right);
+typedef struct hash_table
+{
+	unsigned size;
+	Element *table[MAX];
+} Hash_table;
+
+
+Node* create_node(unsigned char value, unsigned p, Node *next, Node *left, Node* right);
 Queue* create_priority_queue();
 void enqueue(Queue *pq, Node *node);
 Node* dequeue(Queue *pq);
 void print_queue(Queue *pq);
 Node* create_tree(Node *left, Node *right);
 void print_tree(Node *tree);
+
+Hash_table* create_hash_table(Node *tree);
+void put(Hash_table *ht, unsigned char key, unsigned char *byte, unsigned size);
+//unsigned get(Hash_table *ht, unsigned key);
+void search(Hash_table *ht, Node *tree, unsigned char *byte, unsigned size);
+
+void create_header(Node *tree, unsigned tree_size);
+unsigned short tree_nodes(Node *tree, unsigned short size);
+void print_bin();
+
+unsigned trash_size (Hash_table *ht, unsigned char *freq)
+{
+	unsigned total = 0;
+	unsigned i;
+
+	for(i = 0; i < MAX - 1; i++)
+	{
+		if(freq[i] != 0)
+		{
+			total += ht->table[i]->size * freq[i];
+		}
+	}
+	return total;
+
+	unsigned trash = 8 - (trash_size(ht, freq) % 8);
+	unsigned char aux[4];
+	itoa(trash, aux, 2);
+}
 
 int main(unsigned argc, unsigned char const *argv[])
 {
@@ -65,15 +108,23 @@ int main(unsigned argc, unsigned char const *argv[])
 		enqueue(pq, create_node('*', n1->priority+n2->priority, NULL, n1, n2));
 		print_queue(pq);
 	}
-	printf("T:\n");
+	printf("Tree:\n");
 	print_tree(pq->head);
 	printf("\n");
-	fclose(p);
 
+	Hash_table *ht = create_hash_table(pq->head);
+
+	short unsigned s = tree_nodes(pq->head, 0);
+
+	printf("%u\n%u\n",trash_size(ht,freq),(8 - trash_size(ht,freq) % 8));
+
+	printf("%s\n", aux);
+
+	fclose(p);
 	return 0;
 }
 
-Node* create_node(char value, unsigned p, Node *next, Node *left, Node* right)
+Node* create_node(unsigned char value, unsigned p, Node *next, Node *left, Node* right)
 {
 	Node *new = malloc(sizeof(Node));
 	new->value = value;
@@ -163,3 +214,92 @@ void print_tree(Node *tree)
 		print_tree(tree->right);
 	}
 }
+
+Hash_table* create_hash_table(Node *tree)
+{
+	Hash_table *ht = malloc(sizeof(Hash_table));
+
+	unsigned i;
+	for(i=0; i<MAX; i++)
+		ht->table[i] = NULL;
+
+	unsigned char byte[8];
+	search(ht, tree, byte, 0);
+	return ht;
+}
+
+void search(Hash_table *ht, Node *tree, unsigned char *byte, unsigned size)
+{
+	if(!tree)
+		return;
+
+	if(!tree->left && !tree->right)
+	{
+		byte[size] = '\0';
+		put(ht, tree->value, byte, size);
+	}
+	else
+	{
+		byte[size] = '0';
+		search(ht, tree->left, byte, size + 1);
+
+		byte[size] = '1';
+		search(ht, tree->right, byte, size + 1);
+	}
+}
+
+void put(Hash_table *ht, unsigned char key, unsigned char *byte, unsigned size)
+{
+	unsigned index = key;
+
+	printf("%c\n", key);
+	printf("%u\n", index);
+	printf("%s\n", byte);
+	printf("%u\n\n", size);
+
+	Element *new = malloc(sizeof(Element));
+	ht->table[index] = new;
+
+	new->key = key;
+	strcpy(ht->table[index]->byte, byte);
+	new->size = size;
+}
+
+unsigned short tree_nodes(Node *tree, unsigned short size)
+{
+	if(tree)
+	{
+		size++;
+		size = tree_nodes(tree->left, size);
+		size = tree_nodes(tree->right, size);
+	}
+
+	return size;
+}
+
+
+
+/*void create_header(Node *tree, unsigned tree_size)
+{
+	unsigned char byte1, byte2;
+
+	byte1 = byte1 << 5;
+
+}*/
+
+/*unsigned get(Hash_table *ht, unsigned key)
+{
+	unsigned h = key & MAX, start = h, stop = 0;
+
+	while(start != h || !stop)
+	{
+		if(ht->table[h] && ht->table[h]->key == key)
+			return ht->table[h]->value;
+
+		h = (h + 1) % MAX;
+		stop = 1;
+	}
+
+	return -1;
+}
+*/
