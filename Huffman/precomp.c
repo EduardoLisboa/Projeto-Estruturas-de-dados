@@ -305,17 +305,9 @@ void write_tree(Node *tree, FILE *out)
 {
 	if(tree)
 	{
+		fprintf(out, "%c", tree->value);
 		write_tree(tree->left, out);
-		if(tree->value == 42 || tree->value == 92)
-			fprintf(out, "%c", '\\');
-		else
-			fprintf(out, "%c", tree->value);
-		
 		write_tree(tree->right, out);
-		if(tree->value == '*' || tree->value == '\\')
-			fprintf(out, "%c", '\\');
-		else
-			fprintf(out, "%c", tree->value);
 	}
 }
 
