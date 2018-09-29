@@ -45,6 +45,11 @@ void put(Hash_table *ht, unsigned char key, unsigned char *byte, unsigned size);
 //unsigned get(Hash_table *ht, unsigned key);
 void search(Hash_table *ht, Node *tree, unsigned char *byte, unsigned size);
 
+void create_header(Node *tree, unsigned tree_size);
+unsigned short tree_size(Node *tree, unsigned short size);
+void print_bin();
+
+
 int main(unsigned argc, unsigned char const *argv[])
 {
 	if(argc != 2)
@@ -91,8 +96,10 @@ int main(unsigned argc, unsigned char const *argv[])
 
 	Hash_table *ht = create_hash_table(pq->head);
 
-	fclose(p);
+	short unsigned s = tree_size(pq->head, 0);
+	printf("%u\n", sizeof(s));
 
+	fclose(p);
 	return 0;
 }
 
@@ -235,6 +242,28 @@ void put(Hash_table *ht, unsigned char key, unsigned char *byte, unsigned size)
 	strcpy(ht->table[index]->byte, byte);
 	new->size = size;
 }
+
+unsigned short tree_size(Node *tree, unsigned short size)
+{
+	if(tree)
+	{
+		size++;
+		size = tree_size(tree->left, size);
+		size = tree_size(tree->right, size);
+	}
+
+	return size;
+}
+
+
+
+/*void create_header(Node *tree, unsigned tree_size)
+{
+	unsigned char byte1, byte2;
+
+	byte1 = byte1 << 5;
+
+}*/
 
 /*unsigned get(Hash_table *ht, unsigned key)
 {
