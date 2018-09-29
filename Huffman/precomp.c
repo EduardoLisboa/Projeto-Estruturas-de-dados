@@ -49,7 +49,7 @@ void create_header(Node *tree, unsigned tree_size);
 unsigned short tree_nodes(Node *tree, unsigned short size);
 void print_bin();
 
-unsigned trash_size (Hash_table *ht, unsigned char *freq)
+void trash_size (Hash_table *ht, unsigned char *freq)
 {
 	unsigned total = 0;
 	unsigned i;
@@ -61,11 +61,69 @@ unsigned trash_size (Hash_table *ht, unsigned char *freq)
 			total += ht->table[i]->size * freq[i];
 		}
 	}
-	return total;
-
-	unsigned trash = 8 - (trash_size(ht, freq) % 8);
+	
+	unsigned trash = 8 - (total % 8);
 	unsigned char aux[4];
 	itoa(trash, aux, 2);
+
+	unsigned char bin[4];
+	memset(bin, '0', 4);
+
+	unsigned diff = 3 - strlen(aux);
+
+	unsigned j = 0;
+
+	if(diff)
+	{
+		for(i = diff; i < strlen(bin); i++, j++)
+		{
+			bin[i] = aux[j];
+		}
+		printf("%s\n", bin);
+	}
+	else printf("%s\n", aux);
+}
+
+void tree_to_bin(Node *bt)
+{
+	unsigned tree_size = tree_nodes(bt, 0);
+	unsigned char aux[14];
+	itoa(tree_size, aux, 2);
+
+	unsigned char bin[14];
+	memset(bin, '0', 14);
+
+	unsigned diff = 13 - strlen(aux);
+
+	unsigned i, j = 0;
+
+	if(diff)
+	{
+		for(i = diff; i < strlen(bin); i++, j++)
+		{
+			bin[i] = aux[j];
+		}
+		printf("%s\n", bin);
+	}
+	else printf("%s\n", aux);
+
+}
+
+void put_in_file(const char *string, FILE *out)
+{
+    int i;
+
+    unsigned char byte = 0;
+
+    for(i = 0; i < 8; i++)
+    {
+        if(string[i] == '1')
+        {
+            byte |= 1 << (7-i);
+        }
+    }
+
+    fprintf(out, "%c", byte);
 }
 
 int main(unsigned argc, unsigned char const *argv[])
@@ -116,9 +174,12 @@ int main(unsigned argc, unsigned char const *argv[])
 
 	short unsigned s = tree_nodes(pq->head, 0);
 
-	printf("%u\n%u\n",trash_size(ht,freq),(8 - trash_size(ht,freq) % 8));
+	//printf("%u\n%u\n",trash_size(ht,freq),(8 - trash_size(ht,freq) % 8));
+	FILE *out = fopen("compressed", "wb");
+	
+	trash_size(ht, freq);
 
-	printf("%s\n", aux);
+	tree_to_bin(pq->head);
 
 	fclose(p);
 	return 0;
