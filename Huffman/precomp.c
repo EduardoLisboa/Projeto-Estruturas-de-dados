@@ -261,7 +261,7 @@ unsigned short get_trash_size (Hash_table *ht, unsigned char *freq)
 			total += ht->table[i]->size*freq[i];
 		}
 	}
-	return total;
+	return 8 - (total % 8);
 }
 
 unsigned short get_tree_size(Node *tree, unsigned short size)
@@ -278,9 +278,10 @@ unsigned short get_tree_size(Node *tree, unsigned short size)
 
 void create_header(unsigned short trash, unsigned short tree)
 {
-	unsigned char byte1, byte2;
-
-	byte1 = 5 << trash;
+	unsigned char byte1, byte2, aux = tree >> 8;
+	byte1 = trash << 5;
+	byte1 = byte1 | (tree >> 8);
+	byte2 = (tree << 8) >> 8;
 }
 
 /*
