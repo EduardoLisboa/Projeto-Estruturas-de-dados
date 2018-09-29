@@ -7,7 +7,7 @@
 typedef struct node
 {
 	unsigned char value;
-	unsigned priority;
+	unsigned short priority;
 	struct node *next;
 	struct node *left;
 	struct node *right;
@@ -20,19 +20,19 @@ typedef struct priority_queue
 
 typedef struct element
 {
-	unsigned key;
+	unsigned short key;
 	unsigned char byte[8];
-	unsigned size;
+	unsigned short size;
 } Element;
 
 typedef struct hash_table
 {
-	unsigned size;
+	unsigned short size;
 	Element *table[MAX];
 } Hash_table;
 
 
-Node* create_node(unsigned char value, unsigned p, Node *next, Node *left, Node* right);
+Node* create_node(unsigned char value, unsigned short p, Node *next, Node *left, Node* right);
 Queue* create_priority_queue();
 void enqueue(Queue *pq, Node *node);
 Node* dequeue(Queue *pq);
@@ -41,11 +41,11 @@ Node* create_tree(Node *left, Node *right);
 void print_tree(Node *tree);
 
 Hash_table* create_hash_table(Node *tree);
-void put(Hash_table *ht, unsigned char key, unsigned char *byte, unsigned size);
-//unsigned get(Hash_table *ht, unsigned key);
-void search(Hash_table *ht, Node *tree, unsigned char *byte, unsigned size);
+void put(Hash_table *ht, unsigned char key, unsigned char *byte, unsigned short size);
+//unsigned short get(Hash_table *ht, unsigned short key);
+void search(Hash_table *ht, Node *tree, unsigned char *byte, unsigned short size);
 
-void create_header(Node *tree, unsigned tree_size);
+void create_header(Node *tree, unsigned short tree_size);
 unsigned short tree_nodes(Node *tree, unsigned short size);
 void print_bin();
 
@@ -54,7 +54,7 @@ void tree_to_bin(Node *bt)
 void put_in_file(const char *string, FILE *out)
 
 
-int main(unsigned argc, unsigned char const *argv[])
+int main(unsigned short argc, unsigned char const *argv[])
 {
 	if(argc != 2)
 	{
@@ -65,7 +65,7 @@ int main(unsigned argc, unsigned char const *argv[])
 	FILE *p;
 	p = fopen(argv[1], "rb");
 
-	unsigned i;
+	unsigned short i;
 	unsigned char freq[256], ch;
 
 	memset(freq, 0, 256);
@@ -100,7 +100,7 @@ int main(unsigned argc, unsigned char const *argv[])
 
 	Hash_table *ht = create_hash_table(pq->head);
 
-	short unsigned s = tree_nodes(pq->head, 0);
+	unsigned short  s = tree_nodes(pq->head, 0);
 
 	//printf("%u\n%u\n",trash_size(ht,freq),(8 - trash_size(ht,freq) % 8));
 	FILE *out = fopen("compressed", "wb");
@@ -113,7 +113,7 @@ int main(unsigned argc, unsigned char const *argv[])
 	return 0;
 }
 
-Node* create_node(unsigned char value, unsigned p, Node *next, Node *left, Node* right)
+Node* create_node(unsigned char value, unsigned short p, Node *next, Node *left, Node* right)
 {
 	Node *new = malloc(sizeof(Node));
 	new->value = value;
@@ -208,7 +208,7 @@ Hash_table* create_hash_table(Node *tree)
 {
 	Hash_table *ht = malloc(sizeof(Hash_table));
 
-	unsigned i;
+	unsigned short i;
 	for(i=0; i<MAX; i++)
 		ht->table[i] = NULL;
 
@@ -217,7 +217,7 @@ Hash_table* create_hash_table(Node *tree)
 	return ht;
 }
 
-void search(Hash_table *ht, Node *tree, unsigned char *byte, unsigned size)
+void search(Hash_table *ht, Node *tree, unsigned char *byte, unsigned short size)
 {
 	if(!tree)
 		return;
@@ -237,9 +237,9 @@ void search(Hash_table *ht, Node *tree, unsigned char *byte, unsigned size)
 	}
 }
 
-void put(Hash_table *ht, unsigned char key, unsigned char *byte, unsigned size)
+void put(Hash_table *ht, unsigned char key, unsigned char *byte, unsigned short size)
 {
-	unsigned index = key;
+	unsigned short index = key;
 
 	printf("%c\n", key);
 	printf("%u\n", index);
@@ -268,8 +268,8 @@ unsigned short tree_nodes(Node *tree, unsigned short size)
 
 void trash_size (Hash_table *ht, unsigned char *freq)
 {
-	unsigned total = 0;
-	unsigned i;
+	unsigned short total = 0;
+	unsigned short i;
 
 	for(i = 0; i < MAX - 1; i++)
 	{
@@ -279,16 +279,16 @@ void trash_size (Hash_table *ht, unsigned char *freq)
 		}
 	}
 	
-	unsigned trash = 8 - (total % 8);
+	unsigned short trash = 8 - (total % 8);
 	unsigned char aux[4];
 	itoa(trash, aux, 2);
 
 	unsigned char bin[4];
 	memset(bin, '0', 4);
 
-	unsigned diff = 3 - strlen(aux);
+	unsigned short diff = 3 - strlen(aux);
 
-	unsigned j = 0;
+	unsigned short j = 0;
 
 	if(diff)
 	{
@@ -303,16 +303,16 @@ void trash_size (Hash_table *ht, unsigned char *freq)
 
 void tree_to_bin(Node *bt)
 {
-	unsigned tree_size = tree_nodes(bt, 0);
+	unsigned short tree_size = tree_nodes(bt, 0);
 	unsigned char aux[14];
 	itoa(tree_size, aux, 2);
 
 	unsigned char bin[14];
 	memset(bin, '0', 14);
 
-	unsigned diff = 13 - strlen(aux);
+	unsigned short diff = 13 - strlen(aux);
 
-	unsigned i, j = 0;
+	unsigned short i, j = 0;
 
 	if(diff)
 	{
@@ -343,16 +343,16 @@ void put_in_file(const char *string, FILE *out)
 }
 
 /*
-void create_header(Node *tree, unsigned tree_size)
+void create_header(Node *tree, unsigned short tree_size)
 {
 	unsigned char byte1, byte2;
 
 	byte1 = byte1 << 5;
 }
 
-unsigned get(Hash_table *ht, unsigned key)
+unsigned short get(Hash_table *ht, unsigned short key)
 {
-	unsigned h = key & MAX, start = h, stop = 0;
+	unsigned short h = key & MAX, start = h, stop = 0;
 
 	while(start != h || !stop)
 	{
