@@ -42,7 +42,7 @@ void print_tree(Node *tree);
 
 Hash_table* create_hash_table(Node *tree);
 void put(Hash_table *ht, unsigned char key, unsigned char *byte, unsigned short size);
-//unsigned short get(Hash_table *ht, unsigned short key);
+unsigned char* get(Hash_table *ht, unsigned char key);
 void search(Hash_table *ht, Node *tree, unsigned char *byte, unsigned short size);
 
 unsigned short file_data_size(Hash_table *ht, unsigned char *freq);
@@ -52,6 +52,7 @@ unsigned short get_tree_size(Node *tree, unsigned short size);
 void create_header(FILE *out, unsigned short trash, unsigned short tree);
 void write_tree(Node *tree, FILE *out);
 void compress(FILE *input_file, FILE *out, Hash_table *ht, unsigned short size);
+void write_byte(FILE *out, unsigned char* byte_str);
 
 
 int main(unsigned short argc, unsigned char const *argv[])
@@ -66,9 +67,9 @@ int main(unsigned short argc, unsigned char const *argv[])
 	input_file = fopen(argv[1], "rb");
 
 	unsigned short i;
-	unsigned char freq[256], ch;
+	unsigned char freq[MAX], ch;
 
-	memset(freq, 0, 256);
+	memset(freq, 0, MAX);
 
 	while(!feof(input_file))
 	{
@@ -78,7 +79,7 @@ int main(unsigned short argc, unsigned char const *argv[])
 
 	Queue *pq = create_priority_queue();
 
-	for(i=0; i<255; i++)
+	for(i=0; i<MAX-1; i++)
 		if(freq[i])
 		{
 			enqueue(pq, create_node(i, freq[i], NULL, NULL, NULL));
@@ -111,6 +112,7 @@ int main(unsigned short argc, unsigned char const *argv[])
 	compress(input_file, out, ht, file_data_size(ht, freq));
 
 	fclose(input_file);
+	fclose(out);
 	return 0;
 }
 
@@ -218,6 +220,35 @@ Hash_table* create_hash_table(Node *tree)
 	return ht;
 }
 
+void put(Hash_table *ht, unsigned char key, unsigned char *byte, unsigned short size)
+{
+	unsigned short index = key;
+
+	printf("%c\n", key);
+	printf("%u\n", index);
+	printf("%s\n", byte);
+	printf("%u\n\n", size);
+
+	Element *new = malloc(sizeof(Element));
+	ht->table[index] = new;
+
+	new->key = key;
+	strcpy(ht->table[index]->byte, byte);
+	new->size = size;
+}
+
+unsigned char* get(Hash_table *ht, unsigned char key)
+{
+	unsigned short h = key % MAX;
+	printf("catado == %s\n", ht->table[h]->byte);
+
+	if(ht->table[h])
+		return ht->table[h]->byte;
+
+	printf("Erro get\n");
+	exit(1);
+}
+
 void search(Hash_table *ht, Node *tree, unsigned char *byte, unsigned short size)
 {
 	if(!tree)
@@ -236,23 +267,6 @@ void search(Hash_table *ht, Node *tree, unsigned char *byte, unsigned short size
 		byte[size] = '1';
 		search(ht, tree->right, byte, size + 1);
 	}
-}
-
-void put(Hash_table *ht, unsigned char key, unsigned char *byte, unsigned short size)
-{
-	unsigned short index = key;
-
-	printf("%c\n", key);
-	printf("%u\n", index);
-	printf("%s\n", byte);
-	printf("%u\n\n", size);
-
-	Element *new = malloc(sizeof(Element));
-	ht->table[index] = new;
-
-	new->key = key;
-	strcpy(ht->table[index]->byte, byte);
-	new->size = size;
 }
 
 unsigned short file_data_size(Hash_table *ht, unsigned char *freq)
@@ -313,10 +327,141 @@ void write_tree(Node *tree, FILE *out)
 
 void compress(FILE *input_file, FILE *out, Hash_table *ht, unsigned short size)
 {
+	rewind(input_file);
+
+	unsigned short byte_count = 0, new_byte_size = 0, i, j, there_is_rest = 0;
+	unsigned char byte[8] = "\0", temp[8] = "\0", rest[8] = "\0", ch;
+
+	while(byte_count < size/8)
+	{
+		printf("lp infinito? %hu\n", byte_count);
+		if(there_is_rest)
+		{
+			there_is_rest = 0;
+			printf("rest\n");
+			strcpy(temp, rest);
+			memset(rest, '\0', 8);
+		}
+		else
+		{
+			printf("else\n");
+			ch = getc(input_file);
+			printf("lido == %c\n", ch);
+			strcpy(temp, get(ht, ch));
+		}
+
+		new_byte_size = strlen(temp) + strlen(byte);
+		printf("new_byte_size == %hu\n", new_byte_size);
+
+		if(new_byte_size == 8)
+		{
+			strcat(byte, temp);
+			write_byte(out, byte);
+			memset(byte, '\0', 8);
+			byte_count++;
+		}
+		else if(new_byte_size > 8)
+		{
+			there_is_rest = 1;
+			for(i=8-strlen(byte), j=0; i<strlen(temp)+1; i++, j++)
+			{
+					rest[j] = temp[i];
+			}
+			printf("resto %s\n", rest);
+			temp[8-strlen(byte)] = '\0';
+
+			strcat(byte, temp);
+			write_byte(out, byte);
+			memset(byte, 0, 8);
+			byte_count++;
+		}
+		else
+		{
+			strcat(byte, temp);
+		}
+	}
+	if(there_is_rest)
+	{
+		printf("last byte %lu\n", strlen(rest));
+		printf("rest = %s\n", rest);
+		strcat(byte, rest);
+		for(i=strlen(rest)%8; i<8; i++)
+			rest[i] = '0';
+		rest[8] = '\0';
+		write_byte(out, rest);
+	}
+}
+
+void write_byte(FILE *out, unsigned char* byte_str)
+{
+	printf("byte str = %s\n", byte_str);
+	unsigned short i;
+	unsigned char byte = 0;
+	
+	for(i=0; i<8; i++)
+	{
+		if(byte_str[i] == '0')
+		{
+			byte << 1;
+		}
+		else if(byte_str[i] == '1')
+		{
+			byte = 1 | (byte << 1);
+		}
+	}
+	printf("byte!!!! %hu\n", byte);
+	fprintf(out, "%c", byte);
+}
+
+void write_last_byte(FILE *out, unsigned char* byte_str)
+{
 
 }
 
 /*
+void compress(FILE *input_file, FILE *out, Hash_table *ht, unsigned short size)
+{
+	rewind(input_file);
+	printf("size = %hu\n", size/8);
+
+	unsigned short byte_count = 0;
+	unsigned char rest[8];
+
+	while(byte_count < size/8)
+	{
+		strcpy(rest, select_byte(input_file, out, ht,rest));
+		if(rest)
+	}
+}
+
+unsigned char* select_byte(FILE *input_file, FILE *out, Hash_table *ht, unsigned char *rest)
+{
+	unsigned char byte[8], temp[8], ch;
+	unsigned short new_size = 0, i, j;
+
+	while(strlen(byte) != 8)
+	{
+		ch = getc(input_file);
+		strcpy(temp, get(ht, ch));
+		new_size = (strlen(temp) + strlen(byte));
+
+		if(new_size > 8)
+		{
+			for(i=new_size-8, j=0; i>strlen(temp)+1; i++, j++)
+			{
+				rest[j] = temp[i];
+			}
+			//strcpy(rest, temp[new_size-8];
+			temp[new_size-8] = '\0';
+			strcpy(byte, temp);
+			write_byte(input_file, byte);
+			return rest;
+		}
+	}
+	write_byte(input_file, byte);
+	return NULL;
+}
+
 void put_in_file(const char *string, FILE *out)
 {
     unsigned short i;
@@ -332,21 +477,5 @@ void put_in_file(const char *string, FILE *out)
     }
 
     fprintf(out, "%c", byte);
-}
-
-unsigned short get(Hash_table *ht, unsigned short key)
-{
-	unsigned short h = key & MAX, start = h, stop = 0;
-
-	while(start != h || !stop)
-	{
-		if(ht->table[h] && ht->table[h]->key == key)
-			return ht->table[h]->value;
-
-		h = (h + 1) % MAX;
-		stop = 1;
-	}
-
-	return -1;
 }
 */
