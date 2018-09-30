@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define MAX 256
+#define MAX 255
 
 typedef struct node
 {
@@ -53,6 +53,7 @@ void create_header(FILE *out, unsigned short trash, unsigned short tree);
 void write_tree(Node *tree, FILE *out);
 void compress(FILE *input_file, FILE *out, Hash_table *ht, unsigned short size);
 void write_byte(FILE *out, unsigned char* byte_str);
+unsigned char set_bit(unsigned char c, unsigned short i);
 
 
 int main(unsigned short argc, unsigned char const *argv[])
@@ -79,7 +80,7 @@ int main(unsigned short argc, unsigned char const *argv[])
 
 	Queue *pq = create_priority_queue();
 
-	for(i=0; i<MAX-1; i++)
+	for(i=0; i<MAX; i++)
 		if(freq[i])
 		{
 			enqueue(pq, create_node(i, freq[i], NULL, NULL, NULL));
@@ -273,7 +274,7 @@ unsigned short file_data_size(Hash_table *ht, unsigned char *freq)
 {
 	unsigned short total, i;
 
-	for(total=0, i=0; i<MAX-1; i++)
+	for(total=0, i=0; i<MAX; i++)
 	{
 		if(freq[i])
 		{
@@ -400,23 +401,22 @@ void write_byte(FILE *out, unsigned char* byte_str)
 	
 	for(i=0; i<8; i++)
 	{
-		if(byte_str[i] == '0')
+		if(byte_str[i] == '1')
 		{
-			byte << 1;
-		}
-		else if(byte_str[i] == '1')
-		{
-			byte = 1 | (byte << 1);
+			byte = set_bit(byte, (8-i)-1);
 		}
 	}
 	printf("byte!!!! %hu\n", byte);
 	fprintf(out, "%c", byte);
 }
 
-void write_last_byte(FILE *out, unsigned char* byte_str)
+unsigned char set_bit(unsigned char c, unsigned short i)
 {
-
+	unsigned char mask = 1 << i;
+	return mask | c;
 }
+
+
 
 /*
 void compress(FILE *input_file, FILE *out, Hash_table *ht, unsigned short size)
