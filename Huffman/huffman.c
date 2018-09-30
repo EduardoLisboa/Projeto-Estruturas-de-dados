@@ -2,12 +2,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define MAX 255
+#define MAX 256
 
 typedef struct node
 {
 	unsigned char value;
-	unsigned short priority;
+	int priority;
 	struct node *next;
 	struct node *left;
 	struct node *right;
@@ -20,19 +20,19 @@ typedef struct priority_queue
 
 typedef struct element
 {
-	unsigned short key;
+	int key;
 	unsigned char byte[8];
-	unsigned short size;
+	int size;
 } Element;
 
 typedef struct hash_table
 {
-	unsigned short size;
+	int size;
 	Element *table[MAX];
 } Hash_table;
 
 
-Node* create_node(unsigned char value, unsigned short p, Node *next, Node *left, Node* right);
+Node* create_node(unsigned char value, int p, Node *next, Node *left, Node* right);
 Queue* create_priority_queue();
 void enqueue(Queue *pq, Node *node);
 Node* dequeue(Queue *pq);
@@ -41,22 +41,22 @@ Node* create_tree(Node *left, Node *right);
 void print_tree(Node *tree);
 
 Hash_table* create_hash_table(Node *tree);
-void put(Hash_table *ht, unsigned char key, unsigned char *byte, unsigned short size);
+void put(Hash_table *ht, unsigned char key, unsigned char *byte, int size);
 unsigned char* get(Hash_table *ht, unsigned char key);
-void search(Hash_table *ht, Node *tree, unsigned char *byte, unsigned short size);
+void search(Hash_table *ht, Node *tree, unsigned char *byte, int size);
 
-unsigned short file_data_size(Hash_table *ht, unsigned char *freq);
-unsigned short get_trash_size (unsigned short size);
-unsigned short get_tree_size(Node *tree, unsigned short size);
+int file_data_size(Hash_table *ht, unsigned char *freq);
+int get_trash_size (int size);
+int get_tree_size(Node *tree, int size);
 
-void create_header(FILE *out, unsigned short trash, unsigned short tree);
+void create_header(FILE *out, int trash, int tree);
 void write_tree(Node *tree, FILE *out);
-void compress(FILE *input_file, FILE *out, Hash_table *ht, unsigned short size);
+void compress(FILE *input_file, FILE *out, Hash_table *ht, int size);
 void write_byte(FILE *out, unsigned char* byte_str);
-unsigned char set_bit(unsigned char c, unsigned short i);
+unsigned char set_bit(unsigned char c, int i);
 
 
-int main(unsigned short argc, unsigned char const *argv[])
+int main(int argc, unsigned char const *argv[])
 {
 	if(argc != 2)
 	{
@@ -67,15 +67,16 @@ int main(unsigned short argc, unsigned char const *argv[])
 	FILE *input_file;
 	input_file = fopen(argv[1], "rb");
 
-	unsigned short i;
+	int i;
 	unsigned char freq[MAX], ch;
 
 	memset(freq, 0, MAX);
 
+	fread(&ch, sizeof(ch), 1, input_file);
 	while(!feof(input_file))
 	{
-		ch = getc(input_file);
 		freq[ch]++;
+		fread(&ch, sizeof(ch), 1, input_file);
 	}
 
 	Queue *pq = create_priority_queue();
@@ -95,10 +96,10 @@ int main(unsigned short argc, unsigned char const *argv[])
 
 	Hash_table *ht = create_hash_table(pq->head);
 
-	unsigned short trash_size = get_trash_size(file_data_size(ht, freq));
-	unsigned short tree_size = get_tree_size(pq->head, 0);
+	int trash_size = get_trash_size(file_data_size(ht, freq));
+	int tree_size = get_tree_size(pq->head, 0);
 
-	FILE *out = fopen("compressed.huff", "wb");
+	FILE *out = fopen("256.huff", "wb");
 	create_header(out, trash_size, tree_size);
 	write_tree(pq->head, out);
 	compress(input_file, out, ht, file_data_size(ht, freq));
@@ -108,7 +109,7 @@ int main(unsigned short argc, unsigned char const *argv[])
 	return 0;
 }
 
-Node* create_node(unsigned char value, unsigned short p, Node *next, Node *left, Node* right)
+Node* create_node(unsigned char value, int p, Node *next, Node *left, Node* right)
 {
 	Node *new = malloc(sizeof(Node));
 	new->value = value;
@@ -203,7 +204,7 @@ Hash_table* create_hash_table(Node *tree)
 {
 	Hash_table *ht = malloc(sizeof(Hash_table));
 
-	unsigned short i;
+	int i;
 	for(i=0; i<MAX; i++)
 		ht->table[i] = NULL;
 
@@ -212,9 +213,9 @@ Hash_table* create_hash_table(Node *tree)
 	return ht;
 }
 
-void put(Hash_table *ht, unsigned char key, unsigned char *byte, unsigned short size)
+void put(Hash_table *ht, unsigned char key, unsigned char *byte, int size)
 {
-	unsigned short index = key;
+	int index = key;
 
 	Element *new = malloc(sizeof(Element));
 	ht->table[index] = new;
@@ -226,13 +227,13 @@ void put(Hash_table *ht, unsigned char key, unsigned char *byte, unsigned short 
 
 unsigned char* get(Hash_table *ht, unsigned char key)
 {
-	unsigned short h = key % MAX;
+	int h = key % MAX;
 
 	if(ht->table[h])
 		return ht->table[h]->byte;
 }
 
-void search(Hash_table *ht, Node *tree, unsigned char *byte, unsigned short size)
+void search(Hash_table *ht, Node *tree, unsigned char *byte, int size)
 {
 	if(!tree)
 		return;
@@ -252,9 +253,9 @@ void search(Hash_table *ht, Node *tree, unsigned char *byte, unsigned short size
 	}
 }
 
-unsigned short file_data_size(Hash_table *ht, unsigned char *freq)
+int file_data_size(Hash_table *ht, unsigned char *freq)
 {
-	unsigned short total, i;
+	int total, i;
 
 	for(total=0, i=0; i<MAX; i++)
 	{
@@ -267,12 +268,12 @@ unsigned short file_data_size(Hash_table *ht, unsigned char *freq)
 	return total; 
 }
 
-unsigned short get_trash_size (unsigned short size)
+int get_trash_size (int size)
 {
 	return 8 - (size % 8);
 }
 
-unsigned short get_tree_size(Node *tree, unsigned short size)
+int get_tree_size(Node *tree, int size)
 {
 	if(tree)
 	{
@@ -284,7 +285,7 @@ unsigned short get_tree_size(Node *tree, unsigned short size)
 	return size;
 }
 
-void create_header(FILE *out, unsigned short trash, unsigned short tree)
+void create_header(FILE *out, int trash, int tree)
 {
 	unsigned char byte1, byte2, aux = tree >> 8;
 	byte1 = trash << 5;
@@ -305,11 +306,11 @@ void write_tree(Node *tree, FILE *out)
 	}
 }
 
-void compress(FILE *input_file, FILE *out, Hash_table *ht, unsigned short size)
+void compress(FILE *input_file, FILE *out, Hash_table *ht, int size)
 {
 	rewind(input_file);
 
-	unsigned short byte_count = 0, new_byte_size = 0, i, j, there_is_rest = 0;
+	int byte_count = 0, new_byte_size = 0, i, j, there_is_rest = 0;
 	unsigned char byte[8] = "\0", temp[8] = "\0", rest[8] = "\0", ch;
 
 	while(byte_count < size/8)
@@ -322,7 +323,7 @@ void compress(FILE *input_file, FILE *out, Hash_table *ht, unsigned short size)
 		}
 		else
 		{
-			ch = getc(input_file);
+			fread(&ch, sizeof(ch), 1, input_file);
 			strcpy(temp, get(ht, ch));
 		}
 
@@ -366,7 +367,7 @@ void compress(FILE *input_file, FILE *out, Hash_table *ht, unsigned short size)
 
 void write_byte(FILE *out, unsigned char* byte_str)
 {
-	unsigned short i;
+	int i;
 	unsigned char byte = 0;
 	
 	for(i=0; i<8; i++)
@@ -379,7 +380,7 @@ void write_byte(FILE *out, unsigned char* byte_str)
 	fprintf(out, "%c", byte);
 }
 
-unsigned char set_bit(unsigned char c, unsigned short i)
+unsigned char set_bit(unsigned char c, int i)
 {
 	unsigned char mask = 1 << i;
 	return mask | c;
